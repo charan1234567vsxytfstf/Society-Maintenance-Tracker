@@ -20,6 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const uploadDirectory = path.join(__dirname, "uploads");
+const frontendDirectory = path.join(__dirname, "../frontend");
 
 if (!fs.existsSync(uploadDirectory)) {
     fs.mkdirSync(uploadDirectory, { recursive: true });
@@ -217,11 +218,10 @@ const upload = multer({
     }
 });
 
+app.use(express.static(frontendDirectory));
+
 app.get("/", (req, res) => {
-    res.json({
-        message: "Society Maintenance Tracker API",
-        status: "running"
-    });
+    res.sendFile(path.join(frontendDirectory, "index.html"));
 });
 
 app.get("/api/health", (req, res) => {
