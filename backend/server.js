@@ -77,6 +77,39 @@ db.exec(`
         FOREIGN KEY (created_by) REFERENCES users(id)
     );
 `);
+async function ensureAdmin() {
+    const name = process.env.ADMIN_NAME || "Society Admin";
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!email || !password) {
+        console.log("Admin credentials not configured.");
+        return;
+    }
+
+    const existing = db
+        .prepare("SELECT id FROM users WHERE email = ?")
+        .get(email.toLowerCase());
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    if (existing) {
+        db.prepare(`
+            UPDATE users
+            SET name = ?, password = ?, role = 'admin'
+            WHERE email = ?
+        `).run(name, hashedPassword, email.toLowerCase());
+
+        console.log("Admin account ready.");
+    } else {
+        db.prepare(`
+            INSERT INTO users (name, email, password, role)
+            VALUES (?, ?, ?, 'admin')
+        `).run(name, email.toLowerCase(), hashedPassword);
+
+        console.log("Admin account created.");
+    }
+}
 
 async function sendEmail(to, subject, text) {
     if (
@@ -800,10 +833,12 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log("---------------------------------------");
-    console.log("Society Maintenance Tracker API");
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Overdue threshold: ${OVERDUE_DAYS} days`);
-    console.log("---------------------------------------");
+ensureAdmin().then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log("---------------------------------------");
+        console.log("Society Maintenance Tracker API");
+        console.log(`Server running on port ${PORT}`);
+        console.log(`Overdue threshold: ${OVERDUE_DAYS} days`);
+        console.log("---------------------------------------");
+    });
 });
