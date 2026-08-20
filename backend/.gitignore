@@ -1,0 +1,13 @@
+node_modules/
+.env
+backend/society.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+.vscode/
+.idea/
+dist/
+.next/
+out/
+*.log
+.DS_Store
+Thumbs.db
